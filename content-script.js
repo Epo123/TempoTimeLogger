@@ -2,6 +2,7 @@ chrome.storage.onChanged.addListener(function (changes, namespace) {
     for (let [key, {oldValue, newValue}] of Object.entries(changes)) {
         if (key === 'timeLogValue' && newValue !== '') {
             checkCanProcess();
+            prepareCombinedLogs();
             continue;
         }
         if (key === 'report' && newValue !== '') {
@@ -11,9 +12,203 @@ chrome.storage.onChanged.addListener(function (changes, namespace) {
     }
 });
 
+function prepareCombinedLogs() {
+    let workLogFrame = document.querySelector("iframe[src^='/secure/GlobalWorklogDialog.jspa']");
+
+    let workLogForm = workLogFrame.contentWindow.document.getElementById('worklogForm');
+
+    if (!workLogForm) {
+        alert('Please open the Log Time window (press \'w\')');
+        return;
+    }
+
+    // SETUP Grouped report and issueCodes
+    chrome.storage.sync.set({'report': ''});
+
+    chrome.storage.sync.get(['timeLogValue', 'issueCodeOverridesValues'], function (result) {
+        let report = getReport(result.timeLogValue, result.issueCodeOverridesValues);
+
+        console.log('REPORT:');
+        console.log(report);
+
+        // chrome.storage.sync.set({'report': JSON.stringify(report)});
+
+        let timeCardGroupAndSorter = new TimeCardGroupAndSorter();
+        let groupedReport = timeCardGroupAndSorter.groupAndSort(report);
+        let issueCodes = timeCardGroupAndSorter.getIssueCodes(report);
+
+        console.log('!!!!!!');
+        console.log(groupedReport);
+
+        setupWorkLogBlocks(groupedReport, issueCodes, workLogForm);
+
+        setupWorkLogHeaderBlock();
+    });
+}
+
+function setupWorkLogHeaderBlock() {
+
+}
+
+function setupWorkLogBlocks(groupedReport, issueCodes, workLogForm) {
+    let workLogFrame = document.querySelector("iframe[src^='/secure/GlobalWorklogDialog.jspa']");
+
+    for(let i = 0; i < issueCodes.length; i++) {
+        let issueCode = issueCodes[i];
+        let duplicateHeaderMessage = [];
+        let finalCharacters = ' & ';
+        let totalDurationInSeconds = 0;
+        let totalDuration = 0;
+        let completeDescription = '';
+
+        for(let j = 0; j < groupedReport[issueCode].length; j++) {
+            let timeCard = groupedReport[issueCode][j];
+            if (timeCard.headerMessage !== '') {
+                if (!duplicateHeaderMessage.includes(timeCard.headerMessage)) {
+                    duplicateHeaderMessage.push(timeCard.headerMessage);
+                    completeDescription += (timeCard.headerMessage + finalCharacters);
+                }
+            }
+
+            let {diffHours, diffMinutes, diffJiraMinutes, diffSeconds} = getDurationVariables(timeCard.startTime, timeCard.endTime);
+
+            totalDuration += parseFloat(diffHours + '.' + diffJiraMinutes);
+            totalDurationInSeconds += diffSeconds;
+        }
+
+        if (completeDescription.slice(-finalCharacters.length) === finalCharacters) {
+            completeDescription = completeDescription.slice(0, -finalCharacters.length);
+        }
+
+        // TODO: IF completeDescription STILL EMPTY HERE, fill it with a default text. (make configurable?)
+
+        if (completeDescription === "") {
+            completeDescription = "Working on " + issueCode;
+        }
+
+        let issueCodeInputHtml = '<input value="' + issueCode + ': " id="issueCode' + issueCode + '" type="text" width="100%" height="auto" autocomplete="off" style="overflow-wrap: break-word;" class="sc-TOsTZ jTRkRQ sc-gojNiO blRVhp" disabled><div class="sc-gJWqzi IWPGt" type="default"></div>';
+
+        let workLogDescriptionInputHtml = '<textarea rows="5" id="workLogDescription' + issueCode + '" width="100%" class="sc-cJSrbW fjRQxI" style="overflow-x: hidden; overflow-wrap: break-word; height: auto; min-height: 80px">' + completeDescription + '</textarea><div class="sc-gJWqzi IWPGt" type="default"></div>';
+
+        let totalDurationHtml = 'Total duration: ' + totalDuration;
+
+        let logTimeButtonHtml = '<div class="sc-iwsKbI dVrytV"><button class="sc-iELTvK dSVjNn" height="default" type="button" id="submit' + issueCode + '"><span class="sc-cmTdod exoBPf"><span class="sc-jwKygS cWUQDR">Log Time</span></span></button></div><div class="sc-gJWqzi IWPGt" type="default"></div><span style="position: relative; top: -10px;"><hr class="sc-laTMn dLgYsV"></span>';
+
+        let workLogInputHtml = issueCodeInputHtml + workLogDescriptionInputHtml + totalDurationHtml + logTimeButtonHtml;
+
+        workLogForm.querySelector('header').insertAdjacentHTML('afterend', workLogInputHtml);
+
+        let issueCodeInput = workLogForm.querySelector('#issueCode' + issueCode);
+
+        let logTimeButton = workLogFrame.contentWindow.document.getElementById('submit' + issueCode);
+
+        logTimeButton.addEventListener('click', submitTimeLog);
+        logTimeButton.issueCode = issueCode;
+
+        issueCodeInput.dataset.durationSeconds = '' + totalDurationInSeconds;
+
+        searchIssueApi(issueCode);
+    }
+}
+
+function searchIssueApi(issueCode) {
+    let searchUrl = 'https://jira.youweagency.com/rest/api/2/search/';
+
+    let xhrSearch = new XMLHttpRequest();
+
+    xhrSearch.onreadystatechange = function () {
+        if (this.readyState !== 4) return;
+
+        if (this.status === 200) {
+            let data = JSON.parse(this.responseText);
+
+            // console.log('SEARCHDATA:');
+            // console.log(data);
+
+            let issueId = data.issues[0].id;
+
+            let workLogFrame = document.querySelector("iframe[src^='/secure/GlobalWorklogDialog.jspa']");
+
+            let issueCodeInput = workLogFrame.contentWindow.document.getElementById('issueCode' + issueCode);
+
+            issueCodeInput.value = issueCodeInput.value + data.issues[0].fields.summary;
+
+            issueCodeInput.dataset.issueId = issueId;
+        }
+    }
+
+    xhrSearch.open('POST', searchUrl, true);
+    xhrSearch.setRequestHeader('Content-Type', 'application/json');
+    xhrSearch.send(JSON.stringify({
+        jql: 'issue in(\"' + issueCode + '\")',
+        fields: ['issuetype', 'summary'],
+        maxResults: 1,
+        startAt: 0
+    }));
+}
+
+function submitTimeLog(event) {
+    let issueCode = event.currentTarget.issueCode;
+
+    let submitUrl = 'https://jira.youweagency.com/rest/tempo-timesheets/4/worklogs/';
+
+    let xhr = new XMLHttpRequest();
+
+    let worker = document.head.querySelector('meta[name="ajs-tempo-user-key"]').content;
+
+    let workLogFrame = document.querySelector("iframe[src^='/secure/GlobalWorklogDialog.jspa']");
+
+    let submitButton = workLogFrame.contentWindow.document.getElementById('submit' + issueCode);
+
+    xhr.onreadystatechange = function () {
+        if (this.readyState !== 4) return;
+
+        if (this.status === 200) {
+            let data = JSON.parse(this.responseText);
+
+            console.log('DATA:');
+            console.log(data);
+
+            submitButton.setAttribute('disabled', '');
+            submitButton.innerHTML = '<span class="sc-cmTdod exoBPf"><span class="sc-jwKygS cWUQDR">Logged!</span></span>';
+        }
+    }
+
+    let commentInput = workLogFrame.contentWindow.document.getElementById('workLogDescription' + issueCode);
+    let issueCodeInput = workLogFrame.contentWindow.document.getElementById('issueCode' + issueCode);
+    let issueId = issueCodeInput.dataset.issueId;
+
+    let selectedDateInput = workLogFrame.contentWindow.document.getElementById('started');
+    let selectedDate = new Date(selectedDateInput.value);
+
+    let selectedDay = selectedDate.getDate();
+    if (selectedDay < 10) {
+        selectedDay = '0' + selectedDay;
+    }
+    let selectedMonth = selectedDate.getMonth() + 1;
+    if (selectedMonth < 10) {
+        selectedMonth = '0' + selectedMonth;
+    }
+    let selectedYear = selectedDate.getFullYear();
+
+    xhr.open('POST', submitUrl, true);
+    xhr.setRequestHeader('Content-Type', 'application/json');
+    xhr.send(JSON.stringify({
+        attributes: {},
+        billableSeconds: null,
+        worker: worker,
+        comment: commentInput.value,
+        started: selectedYear + '-' + selectedMonth + '-' + selectedDay,
+        timeSpentSeconds: issueCodeInput.dataset.durationSeconds,
+        originTaskId: parseInt(issueId),
+        remainingEstimate: 0,
+        endDate: null,
+        includeNonWorkingDays: false
+    }));
+}
+
 function checkCanProcess() {
     // TRYING API STUFF
-
 
     return;
 
@@ -41,9 +236,9 @@ function checkCanProcess() {
 
         console.log('WORKLOGFORM ACTIVE!!!');
         chrome.storage.sync.set({'report': ''});
-        let report;
+
         chrome.storage.sync.get(['timeLogValue', 'issueCodeOverridesValues'], function (result) {
-            report = getReport(result.timeLogValue, result.issueCodeOverridesValues);
+            let report = getReport(result.timeLogValue, result.issueCodeOverridesValues);
 
             console.log('REPORT:');
             console.log(report);
@@ -79,7 +274,7 @@ function removeTopItemFromReport() {
         let issueCodes = timeCardGroupAndSorter.getIssueCodes(report);
         let issueCode = issueCodes.pop();
 
-        let newTimeLogValue = result.timeLogValue.split('\n').filter(function(line) {
+        let newTimeLogValue = result.timeLogValue.split('\n').filter(function (line) {
             return line.indexOf(issueCode) === -1;
         }).join('\n');
 
@@ -88,7 +283,7 @@ function removeTopItemFromReport() {
 
         let newReport = getReport(newTimeLogValue, result.issueCodeOverridesValues);
         let secondCount = newReport.length;
-        if(firstCount === secondCount) {
+        if (firstCount === secondCount) {
             alert('All done!'); // TODO: NOT WORKING YET
         } else {
             chrome.storage.sync.set({'report': JSON.stringify(newReport)});
@@ -125,7 +320,7 @@ function fillNextWorkLog(report) {
 
         // Combined description
         if (timeCard.headerMessage !== '') {
-            if(!duplicateHeaderMessage.includes(timeCard.headerMessage)) {
+            if (!duplicateHeaderMessage.includes(timeCard.headerMessage)) {
                 duplicateHeaderMessage.push(timeCard.headerMessage);
                 completeDescription += (timeCard.headerMessage + finalCharacters);
             }
@@ -136,7 +331,7 @@ function fillNextWorkLog(report) {
         totalDuration += parseFloat(diffHours + '.' + diffJiraMinutes);
     }
 
-    if(completeDescription.slice(-finalCharacters.length) === finalCharacters) {
+    if (completeDescription.slice(-finalCharacters.length) === finalCharacters) {
         completeDescription = completeDescription.slice(0, -finalCharacters.length);
     }
 
@@ -169,7 +364,7 @@ function fillNextWorkLog(report) {
     issuePickerInput.value = issueCode;
     issuePickerInput.dispatchEvent(changeEvent);
 
-    setTimeout(function() {
+    setTimeout(function () {
         hitEnter(issuePickerInput);
     }, 2000);
 
@@ -177,13 +372,13 @@ function fillNextWorkLog(report) {
 
     setCommentInput(commentInput, completeDescription);
 
-    setTimeout(function() {
-        chrome.storage.sync.get(['autoLogValue'], function(result) {
+    setTimeout(function () {
+        chrome.storage.sync.get(['autoLogValue'], function (result) {
             if (result.autoLogValue === true) {
                 let submitButton = workLogFrame.contentWindow.document.querySelector('[name=submitWorklogButton]');
 
                 triggerClickEvent(submitButton);
-                setTimeout(function() {
+                setTimeout(function () {
                     removeTopItemFromReport();
                 }, 3000);
             }
@@ -197,16 +392,16 @@ function setCommentInput(commentInput, completeDescription) {
     let changeEvent = new Event('change', {'bubbles': true});
     let blurEvent = new Event('blur', {'bubbles': true});
 
-    setTimeout(function() {
+    setTimeout(function () {
         commentInput.dispatchEvent(clickEvent);
     }, 3600);
-    setTimeout(function() {
+    setTimeout(function () {
         commentInput.value = completeDescription;
     }, 3800);
-    setTimeout(function() {
+    setTimeout(function () {
         commentInput.dispatchEvent(changeEvent);
     }, 4000);
-    setTimeout(function() {
+    setTimeout(function () {
         commentInput.dispatchEvent(blurEvent);
     }, 4200);
 }
@@ -216,16 +411,16 @@ function setDurationInput(durationInput, totalDuration) {
     let changeEvent = new Event('change', {'bubbles': true});
     let blurEvent = new Event('blur', {'bubbles': true});
 
-    setTimeout(function() {
+    setTimeout(function () {
         durationInput.dispatchEvent(clickEvent);
     }, 3000);
-    setTimeout(function() {
+    setTimeout(function () {
         durationInput.value = totalDuration;
     }, 3200);
-    setTimeout(function() {
+    setTimeout(function () {
         durationInput.dispatchEvent(changeEvent);
     }, 3400);
-    setTimeout(function() {
+    setTimeout(function () {
         durationInput.dispatchEvent(blurEvent);
     }, 3500);
 }
@@ -300,7 +495,8 @@ function getDurationVariables(startTimeString, endTimeString) {
     let diffHours = Math.floor((diffMs % 86400000) / 3600000);
     let diffMinutes = Math.round(((diffMs % 86400000) % 3600000) / 60000);
     let diffJiraMinutes = Math.round((diffMinutes / 60) * 100);
-    return {diffHours, diffMinutes, diffJiraMinutes};
+    let diffSeconds = Math.abs(diffMs / 1000);
+    return {diffHours, diffMinutes, diffJiraMinutes, diffSeconds};
 }
 
 class TimeCard {
@@ -387,8 +583,8 @@ class TimeCardHeaderBuilder {
     }
 
     getReplacedIssueCode(match) {
-        for(let i = 0; i < this.issueCodeOverridesValues.length; i++) {
-            if(this.issueCodeOverridesValues[i][0] === match) {
+        for (let i = 0; i < this.issueCodeOverridesValues.length; i++) {
+            if (this.issueCodeOverridesValues[i][0] === match) {
                 return this.issueCodeOverridesValues[i][1];
             }
         }

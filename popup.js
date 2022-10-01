@@ -41,15 +41,13 @@ processButton.addEventListener("click", async () => {
 function processTimeLog() {
     let timeLogInputValue = timeLog.value;
     chrome.storage.sync.get(['timeLogValue'], function(result) {
-        if (timeLogInputValue === result.timeLogValue) {
-            alert('Please update the input field before pressing the Process button');
-        } else {
-            chrome.storage.sync.set({'timeLogValue': timeLogInputValue}, function() {
-                console.log('timeLogValue stored in storage');
+        chrome.storage.sync.set({timeLogValue: ''});
 
-                window.close();
-            });
-        }
+        chrome.storage.sync.set({'timeLogValue': timeLogInputValue}, function() {
+            console.log('timeLogValue stored in storage');
+
+            window.close();
+        });
     });
 }
 
