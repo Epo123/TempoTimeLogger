@@ -1,7 +1,6 @@
 // Initialize button with user's preferred color
 let processButton = document.getElementById("process");
 let timeLog = document.getElementById('timeLog');
-let autoLog = document.getElementById('autoLog');
 
 // chrome.storage.sync.set({'timeLogValue': ''});
 
@@ -10,14 +9,8 @@ let autoLog = document.getElementById('autoLog');
 //     chrome.storage.sync.set({timeLogValue});
 // });
 
-autoLog.addEventListener('change', function() {
-    let autoLogValue = autoLog.checked;
-    chrome.storage.sync.set({autoLogValue});
-})
-
-chrome.storage.sync.get(['timeLogValue', 'autoLogValue'], function (result) {
+chrome.storage.sync.get(['timeLogValue'], function (result) {
     timeLog.value = result.timeLogValue;
-    autoLog.checked = result.autoLogValue;
 });
 
 // TODO: Set correct default values in 'onInstalled'

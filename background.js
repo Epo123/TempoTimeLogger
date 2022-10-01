@@ -5,10 +5,8 @@ let issueCodeOverride = 'INT-2:INTBBBBBZJ-2\n' +
     'INT-5:INTBBBBBZJ-5\n' +
     'INT-22:INTBBBBBZJ-22';
 let defaultWorkLogDescription = 'Working on ';
-let autoLog = false;
 
 chrome.runtime.onInstalled.addListener(() => {
     chrome.storage.sync.set({ issueCodeOverride });
     chrome.storage.sync.set({ defaultWorkLogDescription });
-    chrome.storage.sync.set({ autoLog });
 });
