@@ -2,24 +2,63 @@ let issueCodeOverrides = document.getElementById('issueCodeOverrides');
 let submitIssueCodeOverrides = document.getElementById('submitIssueCodeOverrides');
 let defaultWorkLogDescription = document.getElementById('defaultWorkLogDescription');
 let submitDefaultWorkLogDescription = document.getElementById('submitDefaultWorkLogDescription');
+let workLogOrderSubmit = document.getElementById('submitWorkLogOrder');
+let timeSeparatorSubmit = document.getElementById('submitTimeSeparator');
+let elementSeparatorSubmit = document.getElementById('submitElementSeparator');
 
 submitDefaultWorkLogDescription.addEventListener('click', function() {
     let defaultWorkLogDescriptionValue = defaultWorkLogDescription.value;
-    chrome.storage.sync.set({defaultWorkLogDescriptionValue});
-    alert('Default work log description stored.');
+    chrome.storage.sync.set({ defaultWorkLogDescriptionValue }, function() {
+        alert('Default work log description stored.');
+    });
 });
 
-submitIssueCodeOverrides.addEventListener('click', function () {
+submitIssueCodeOverrides.addEventListener('click', function() {
     if(syntaxCheckIssueCodeOverrides()) {
         let issueCodeOverridesValues = issueCodeOverrides.value;
-        chrome.storage.sync.set({issueCodeOverridesValues});
-        alert('Overrides stored');
+        chrome.storage.sync.set({ issueCodeOverridesValues }, function() {
+            alert('Overrides stored');
+        });
     }
 });
 
-chrome.storage.sync.get(['issueCodeOverridesValues', 'defaultWorkLogDescriptionValue'], function(result) {
+workLogOrderSubmit.addEventListener('click', function() {
+    let workLogOrder = document.querySelector('input[name="workLogOrder"]:checked');
+    let workLogOrderValue = workLogOrder.value;
+    chrome.storage.sync.set({ workLogOrderValue }, function() {
+        alert('Work Log order stored.');
+    });
+});
+
+timeSeparatorSubmit.addEventListener('click', function() {
+    let timeSeparator = document.querySelector('input[name="timeSeparator"]:checked');
+    let timeSeparatorValue = timeSeparator.value;
+    chrome.storage.sync.set({ timeSeparatorValue }, function() {
+        alert('Time Separator stored');
+    });
+});
+
+elementSeparatorSubmit.addEventListener('click', function() {
+    let elementSeparator = document.querySelector('input[name="elementSeparator"]:checked');
+    let elementSeparatorValue = elementSeparator.value;
+    chrome.storage.sync.set({ elementSeparatorValue }, function() {
+        alert('Element Separator stored.');
+        chrome.storage.sync.get(['issueCodeOverridesValues', 'defaultWorkLogDescriptionValue', 'workLogOrderValue', 'timeSeparatorValue', 'elementSeparatorValue'], function(result) {
+            console.log(result);
+        });
+    });
+});
+
+chrome.storage.sync.get(['issueCodeOverridesValues', 'defaultWorkLogDescriptionValue', 'workLogOrderValue', 'timeSeparatorValue', 'elementSeparatorValue'], function(result) {
     issueCodeOverrides.innerHTML = result.issueCodeOverridesValues;
     defaultWorkLogDescription.innerHTML = result.defaultWorkLogDescriptionValue;
+
+    console.log('TEST');
+    console.log(result);
+
+    document.getElementById(result.workLogOrderValue).checked = true;
+    document.getElementById(result.timeSeparatorValue).checked = true;
+    document.getElementById(result.elementSeparatorValue).checked = true;
 });
 
 function syntaxCheckIssueCodeOverrides() {

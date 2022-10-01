@@ -13,10 +13,6 @@ chrome.storage.sync.get(['timeLogValue'], function (result) {
     timeLog.value = result.timeLogValue;
 });
 
-// TODO: Set correct default values in 'onInstalled'
-// TODO: Allow for different formats (issue code first, then time start + end + message
-// TODO: Allow hours minutes separated by . instead of : also with -  ( configurable )
-
 // When the button is clicked, inject setPageBackgroundColor into current page
 processButton.addEventListener("click", async () => {
     // let [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
@@ -33,12 +29,9 @@ processButton.addEventListener("click", async () => {
 // current page
 function processTimeLog() {
     let timeLogInputValue = timeLog.value;
-    chrome.storage.sync.get(['timeLogValue'], function(result) {
-        chrome.storage.sync.set({timeLogValue: ''});
-
+    chrome.storage.sync.set({timeLogValue: ''}, function() {
         chrome.storage.sync.set({'timeLogValue': timeLogInputValue}, function() {
             console.log('timeLogValue stored in storage');
-
             window.close();
         });
     });

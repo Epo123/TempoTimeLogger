@@ -9,19 +9,43 @@ chrome.storage.onChanged.addListener(function (changes, namespace) {
 function prepareCombinedLogs() {
     let workLogFrame = document.querySelector("iframe[src^='/secure/GlobalWorklogDialog.jspa']");
 
-    let workLogForm = workLogFrame.contentWindow.document.getElementById('worklogForm');
-
-    if (!workLogForm) {
+    if (!workLogFrame) {
         alert('Please open the Log Time window (press \'w\')');
         return;
     }
 
-    chrome.storage.sync.get(['timeLogValue', 'issueCodeOverridesValues', 'defaultWorkLogDescriptionValue'], function (result) {
-        let report = getReport(result.timeLogValue, result.issueCodeOverridesValues);
+    let workLogForm = workLogFrame.contentWindow.document.getElementById('worklogForm');
+
+    chrome.storage.sync.get(['timeLogValue', 'issueCodeOverrideValues', 'defaultWorkLogDescriptionValue', 'workLogOrderValue', 'timeSeparatorValue', 'elementSeparatorValue'], function (result) {
+        let timeSeparatorValue = result.timeSeparatorValue;
+        let elementSeparatorValue = result.elementSeparatorValue;
+
+        if(timeSeparatorValue === 'colonTimeSeparator') {
+            timeSeparatorValue = ':';
+        } else {
+            timeSeparatorValue = '.';
+        }
+
+        if (elementSeparatorValue === 'dashElementSeparator') {
+            elementSeparatorValue = '-';
+        } else {
+            elementSeparatorValue = '/';
+        }
+
+        let report = getReport(
+            result.timeLogValue,
+            result.issueCodeOverrideValues,
+            result.workLogOrderValue,
+            timeSeparatorValue,
+            elementSeparatorValue
+        );
 
         let timeCardGroupAndSorter = new TimeCardGroupAndSorter();
         let groupedReport = timeCardGroupAndSorter.groupAndSort(report);
         let issueCodes = timeCardGroupAndSorter.getIssueCodes(report);
+
+        console.log('Grouped report: ' + groupedReport);
+        console.log('Issue codes: ' + issueCodes);
 
         setupWorkLogBlocks(groupedReport, issueCodes, workLogForm, result.defaultWorkLogDescriptionValue);
 
@@ -222,9 +246,13 @@ function submitTimeLog(event) {
     submitIssueTimeLog(issueCode);
 }
 
-function getReport(timeLogValue, issueCodeOverridesValues) {
+function getReport(timeLogValue, issueCodeOverrideValues, workLogOrder, timeSeparatorValue, elementSeparatorValue) {
     let timeCardBuilder = new TimeCardBuilder();
-    timeCardBuilder.setissueCodeOverridesValues(issueCodeOverridesValues);
+    timeCardBuilder.setissueCodeOverrideValues(issueCodeOverrideValues);
+    timeCardBuilder.setWorkLogOrder(workLogOrder);
+    timeCardBuilder.setTimeSeparator(timeSeparatorValue);
+    timeCardBuilder.setTimeLogElementSeparator(elementSeparatorValue);
+    timeCardBuilder.prepareRegex();
 
     let reportToSort = [];
 
@@ -305,17 +333,42 @@ class TimeCardHeaderBuilder {
     issueCodeHeaderWithMessageRegex = '^(?<startTime>\\d+:\\d+)(?:\\s*)-(?:\\s*)(?<endTime>\\d+:\\d+)(?:\\s*)-(?:\\s*)(?<issueCode>[A-Za-z]+\\d*-\\d+)(?:\\s*)-(?:\\s*)(?<message>.+)';
     issueCodeHeaderRegex = '^(?<startTime>\\d+:\\d+)(?:\\s*)-(?:\\s*)(?<endTime>\\d+:\\d+)(?:\\s*)-(?:\\s*)(?<issueCode>[A-Za-z0-9]+\\d*-\\d+)';
     timeCardHeaderRegex = '^(?<startTime>\\d+:\\d+)(?:\\s*)-(?:\\s*)(?<endTime>\\d+:\\d+)';
-    issueCodeOverridesValues = [];
+    issueCodeOverrideValues = [];
+    workLogOrder = 'startEndIssueCode';
+    timeSeparator = ':';
+    timeLogElementSeparator = ' - ';
 
-    setIssueCodeOverridesValues(issueCodeOverridesValues) {
-        let issueCodeOverridesValueLines = issueCodeOverridesValues.split('\n');
-        let newIssueCodeOverridesValues = [];
+    setIssueCodeOverrideValues(issueCodeOverrideValues) {
+        let issueCodeOverrideValueLines = issueCodeOverrideValues.split('\n');
+        let newIssueCodeOverrideValues = [];
 
-        for (let i = 0; i < issueCodeOverridesValueLines.length; i++) {
-            newIssueCodeOverridesValues.push(issueCodeOverridesValueLines[i].split(':'));
+        for (let i = 0; i < issueCodeOverrideValueLines.length; i++) {
+            newIssueCodeOverrideValues.push(issueCodeOverrideValueLines[i].split(':'));
         }
 
-        this.issueCodeOverridesValues = newIssueCodeOverridesValues;
+        this.issueCodeOverrideValues = newIssueCodeOverrideValues;
+    }
+
+    setWorkLogOrder(workLogOrder) {
+        this.workLogOrder = workLogOrder;
+    }
+
+    setTimeSeparator(timeSeparator) {
+        this.timeSeparator = timeSeparator;
+    }
+
+    setTimeLogElementSeparator(timeLogElementSeparator) {
+        this.timeLogElementSeparator = timeLogElementSeparator;
+    }
+
+    prepareRegex() {
+        if (this.workLogOrder === 'issueCodeStartEnd') {
+            this.issueCodeHeaderWithMessageRegex = '^(?<issueCode>[A-Za-z]+\\d*-\\d+)(?:\\s*)' + this.timeLogElementSeparator + '(?:\\s*)(?<startTime>\\d+' + this.timeSeparator + '\\d+)(?:\\s*)' + this.timeLogElementSeparator + '(?:\\s*)(?<endTime>\\d+' + this.timeSeparator + '\\d+)(?:\\s*)' + this.timeLogElementSeparator + '(?:\\s*)(?<message>.+)';
+            this.issueCodeHeaderRegex = '^(?<issueCode>[A-Za-z]+\\d*-\\d+)(?:\\s*)' + this.timeLogElementSeparator + '(?:\\s*)(?<startTime>\\d+' + this.timeSeparator + '\\d+)(?:\\s*)' + this.timeLogElementSeparator + '(?:\\s*)(?<endTime>\\d+' + this.timeSeparator + '\\d+)';
+        } else {
+            this.issueCodeHeaderWithMessageRegex = '^(?<startTime>\\d+' + this.timeSeparator + '\\d+)(?:\\s*)' + this.timeLogElementSeparator + '(?:\\s*)(?<endTime>\\d+' + this.timeSeparator + '\\d+)(?:\\s*)' + this.timeLogElementSeparator + '(?:\\s*)(?<issueCode>[A-Za-z]+\\d*-\\d+)(?:\\s*)' + this.timeLogElementSeparator + '(?:\\s*)(?<message>.+)';
+            this.issueCodeHeaderRegex = '^(?<startTime>\\d+' + this.timeSeparator + '\\d+)(?:\\s*)' + this.timeLogElementSeparator + '(?:\\s*)(?<endTime>\\d+' + this.timeSeparator + '\\d+)(?:\\s*)' + this.timeLogElementSeparator + '(?:\\s*)(?<issueCode>[A-Za-z0-9]+\\d*-\\d+)';
+        }
     }
 
     build(input) {
@@ -340,9 +393,9 @@ class TimeCardHeaderBuilder {
     }
 
     getReplacedIssueCode(match) {
-        for (let i = 0; i < this.issueCodeOverridesValues.length; i++) {
-            if (this.issueCodeOverridesValues[i][0] === match) {
-                return this.issueCodeOverridesValues[i][1];
+        for (let i = 0; i < this.issueCodeOverrideValues.length; i++) {
+            if (this.issueCodeOverrideValues[i][0] === match) {
+                return this.issueCodeOverrideValues[i][1];
             }
         }
         return match;
@@ -406,10 +459,26 @@ class TimeCardBuilder {
     isCardComplete = false;
     currentTimeCard = null;
     nextTimeCard = null;
-    issueCodeOverridesValues = '';
+    issueCodeOverrideValues = '';
 
-    setissueCodeOverridesValues(issueCodeOverridesValues) {
-        this.timeCardHeaderBuilder.setIssueCodeOverridesValues(issueCodeOverridesValues);
+    setissueCodeOverrideValues(issueCodeOverrideValues) {
+        this.timeCardHeaderBuilder.setIssueCodeOverrideValues(issueCodeOverrideValues);
+    }
+
+    setWorkLogOrder(workLogOrder) {
+        this.timeCardHeaderBuilder.setWorkLogOrder(workLogOrder);
+    }
+
+    setTimeSeparator(timeSeparator) {
+        this.timeCardHeaderBuilder.setTimeSeparator(timeSeparator);
+    }
+
+    setTimeLogElementSeparator(timeLogElementSeparator) {
+        this.timeCardHeaderBuilder.setTimeLogElementSeparator(timeLogElementSeparator);
+    }
+
+    prepareRegex() {
+        this.timeCardHeaderBuilder.prepareRegex();
     }
 
     addLine(input) {
