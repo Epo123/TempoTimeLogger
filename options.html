@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head >
+  <link rel="stylesheet" href="style.css">
+  <title>Options</title>
+</head>
+<body>
+<div>
+  <h3><label for="issueCodeOverrides"><p>Choose how to override certain issue codes by separating them by colon. Example INT-2:INTBBBBBZJ-2</p></label></h3>
+  <textarea id="issueCodeOverrides" rows="30" cols="100"></textarea>
+</div>
+<div>
+  <button id="submitIssueCodeOverrides">Save issue code overrides</button>
+</div>
+<div>
+  <h3><label for="defaultWorkLogDescription"><p>Choose your default worklog description if you don't supply a message (appended by the issueCode)</p></label></h3>
+  <textarea id="defaultWorkLogDescription"></textarea>
+</div>
+<div>
+  <button id="submitDefaultWorkLogDescription">Save default worklog description</button>
+</div>
+<script src="options.js"></script>
+</body>
+</html>

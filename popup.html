@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="stylesheet" href="style.css">
+    <title>Popup</title>
+</head>
+<body>
+<div>
+    <h2>
+        <label for="timeLog">
+            Open the Log time dialog (shortcut: 'w'), enter your time log in the area below and click 'Process'
+        </label>
+    </h2>
+    <textarea rows="30" cols="90" id="timeLog"></textarea>
+</div>
+<div>
+    <h2>You need to have changed the input field before pressing Process button</h2>
+    <button id="process">Process</button>
+    <h2>
+        <label for="autoLog">Auto-log
+            <input type="checkbox" id="autoLog"/>
+        </label>
+    </h2>
+</div>
+<script src="popup.js"></script>
+</body>
+</html>
