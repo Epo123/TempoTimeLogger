@@ -16,6 +16,13 @@ function prepareCombinedLogs() {
 
     let workLogForm = workLogFrame.contentWindow.document.getElementById('worklogForm');
 
+    let logAllButton = workLogFrame.contentWindow.document.getElementById('submitAll');
+
+    if (logAllButton) {
+        alert('Please refresh the page before reprocessing.');
+        return;
+    }
+
     chrome.storage.sync.get(['timeLogValue', 'issueCodeOverrideValues', 'defaultWorkLogDescriptionValue', 'workLogOrderValue', 'timeSeparatorValue', 'elementSeparatorValue'], function (result) {
         let timeSeparatorValue = result.timeSeparatorValue;
         let elementSeparatorValue = result.elementSeparatorValue;
@@ -44,8 +51,10 @@ function prepareCombinedLogs() {
         let groupedReport = timeCardGroupAndSorter.groupAndSort(report);
         let issueCodes = timeCardGroupAndSorter.getIssueCodes(report);
 
-        console.log('Grouped report: ' + groupedReport);
-        console.log('Issue codes: ' + issueCodes);
+        console.log('Grouped report:');
+        console.log(groupedReport);
+        console.log('Issue codes: ');
+        console.log(issueCodes);
 
         setupWorkLogBlocks(groupedReport, issueCodes, workLogForm, result.defaultWorkLogDescriptionValue);
 
@@ -368,6 +377,9 @@ class TimeCardHeaderBuilder {
     }
 
     setTimeSeparator(timeSeparator) {
+        if (timeSeparator === '.') {
+            timeSeparator = '\.';
+        }
         this.timeSeparator = timeSeparator;
     }
 
@@ -418,9 +430,8 @@ class TimeCardHeaderBuilder {
     createIssueCodeHeaderWithMessageTimeCard(input) {
         let timeCard = new TimeCard();
         let matches = input.match(this.issueCodeHeaderWithMessageRegex);
-        timeCard.setStartTime(matches[1]);
-        timeCard.setEndTime(matches[2]);
-        timeCard.setIssueCode(this.getReplacedIssueCode(matches[3]));
+        this.setTimeCardVariables(timeCard, matches);
+
         timeCard.setHeaderMessage(matches[4]);
 
         timeCard.setHeaderIsSet();
@@ -439,17 +450,27 @@ class TimeCardHeaderBuilder {
     createIssueCodeHeaderTimeCard(input) {
         let timeCard = new TimeCard();
         let matches = input.match(this.issueCodeHeaderRegex);
-        timeCard.setStartTime(matches[1]);
-        timeCard.setEndTime(matches[2]);
-        timeCard.setIssueCode(this.getReplacedIssueCode(matches[3]));
+        this.setTimeCardVariables(timeCard, matches);
 
         timeCard.setHeaderIsSet();
 
         return timeCard;
     }
 
+    setTimeCardVariables(timeCard, matches) {
+        if (this.workLogOrder === 'startEndIssueCode') {
+            timeCard.setStartTime(matches[1]);
+            timeCard.setEndTime(matches[2]);
+            timeCard.setIssueCode(this.getReplacedIssueCode(matches[3]));
+        } else {
+            timeCard.setIssueCode(this.getReplacedIssueCode(matches[1]));
+            timeCard.setStartTime(matches[2]);
+            timeCard.setEndTime(matches[3]);
+        }
+    }
+
     isTimeCardHeader(input) {
-        let matches = input.match(this.timeCardHeaderRegex);
+        let matches = input.match(this.issueCodeHeaderRegex);
         if (matches) {
             return true;
         }
