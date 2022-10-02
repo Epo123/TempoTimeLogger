@@ -5,6 +5,15 @@ let submitDefaultWorkLogDescription = document.getElementById('submitDefaultWork
 let workLogOrderSubmit = document.getElementById('submitWorkLogOrder');
 let timeSeparatorSubmit = document.getElementById('submitTimeSeparator');
 let elementSeparatorSubmit = document.getElementById('submitElementSeparator');
+let jiraUrlPartInput = document.getElementById('jiraUrlPart');
+let submitJiraUrlPart = document.getElementById('submitJiraUrlPart');
+
+submitJiraUrlPart.addEventListener('click', function() {
+    let jiraUrlPart = jiraUrlPartInput.value;
+    chrome.storage.sync.set({ jiraUrlPart }, function() {
+        alert('Jira url part set, requests will be sent to ' + 'https://jira.' + jiraUrlPart + '.com please make sure this matches.')
+    });
+});
 
 submitDefaultWorkLogDescription.addEventListener('click', function() {
     let defaultWorkLogDescriptionValue = defaultWorkLogDescription.value;
@@ -49,9 +58,10 @@ elementSeparatorSubmit.addEventListener('click', function() {
     });
 });
 
-chrome.storage.sync.get(['issueCodeOverridesValues', 'defaultWorkLogDescriptionValue', 'workLogOrderValue', 'timeSeparatorValue', 'elementSeparatorValue'], function(result) {
+chrome.storage.sync.get(['issueCodeOverridesValues', 'defaultWorkLogDescriptionValue', 'workLogOrderValue', 'timeSeparatorValue', 'elementSeparatorValue', 'jiraUrlPart'], function(result) {
     issueCodeOverrides.innerHTML = result.issueCodeOverridesValues;
     defaultWorkLogDescription.innerHTML = result.defaultWorkLogDescriptionValue;
+    jiraUrlPartInput.value = result.jiraUrlPart;
 
     document.getElementById(result.workLogOrderValue).checked = true;
     document.getElementById(result.timeSeparatorValue).checked = true;

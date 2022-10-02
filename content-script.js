@@ -23,7 +23,7 @@ function prepareCombinedLogs() {
         return;
     }
 
-    chrome.storage.sync.get(['timeLogValue', 'issueCodeOverrideValues', 'defaultWorkLogDescriptionValue', 'workLogOrderValue', 'timeSeparatorValue', 'elementSeparatorValue'], function (result) {
+    chrome.storage.sync.get(['timeLogValue', 'issueCodeOverrideValues', 'defaultWorkLogDescriptionValue', 'workLogOrderValue', 'timeSeparatorValue', 'elementSeparatorValue', 'jiraUrlPart'], function (result) {
         let timeSeparatorValue = result.timeSeparatorValue;
         let elementSeparatorValue = result.elementSeparatorValue;
 
@@ -56,13 +56,13 @@ function prepareCombinedLogs() {
         console.log('Issue codes: ');
         console.log(issueCodes);
 
-        setupWorkLogBlocks(groupedReport, issueCodes, workLogForm, result.defaultWorkLogDescriptionValue);
+        setupWorkLogBlocks(groupedReport, issueCodes, workLogForm, result.defaultWorkLogDescriptionValue, result.jiraUrlPart);
 
-        setupWorkLogHeaderBlock(groupedReport, issueCodes, workLogForm);
+        setupWorkLogHeaderBlock(groupedReport, issueCodes, workLogForm, result.jiraUrlPart);
     });
 }
 
-function setupWorkLogHeaderBlock(groupedReport, issueCodes, workLogForm) {
+function setupWorkLogHeaderBlock(groupedReport, issueCodes, workLogForm, jiraUrlPart) {
     let totalDuration = 0;
     let workLogFrame = document.querySelector("iframe[src^='/secure/GlobalWorklogDialog.jspa']");
 
@@ -84,12 +84,14 @@ function setupWorkLogHeaderBlock(groupedReport, issueCodes, workLogForm) {
 
     let logAllButton = workLogFrame.contentWindow.document.getElementById('submitAll');
 
+    logAllButton.dataset.jiraUrlPart = jiraUrlPart;
+
     logAllButton.dataset.issueCodes = JSON.stringify(issueCodes);
 
     logAllButton.addEventListener('click', submitAllTimeLogs);
 }
 
-function setupWorkLogBlocks(groupedReport, issueCodes, workLogForm, defaultWorkLogDescriptionValue) {
+function setupWorkLogBlocks(groupedReport, issueCodes, workLogForm, defaultWorkLogDescriptionValue, jiraUrlPart) {
     let workLogFrame = document.querySelector("iframe[src^='/secure/GlobalWorklogDialog.jspa']");
 
     for(let i = 0; i < issueCodes.length; i++) {
@@ -144,12 +146,12 @@ function setupWorkLogBlocks(groupedReport, issueCodes, workLogForm, defaultWorkL
 
         issueCodeInput.dataset.durationSeconds = '' + totalDurationInSeconds;
 
-        searchIssueApi(issueCode);
+        searchIssueApi(issueCode, jiraUrlPart);
     }
 }
 
-function searchIssueApi(issueCode) {
-    let searchUrl = 'https://jira.youweagency.com/rest/api/2/search/';
+function searchIssueApi(issueCode, jiraUrlPart) {
+    let searchUrl = 'https://jira.' + jiraUrlPart + '.com/rest/api/2/search/';
 
     let xhrSearch = new XMLHttpRequest();
 
@@ -205,13 +207,17 @@ function submitAllTimeLogs(event) {
 }
 
 function submitIssueTimeLog(issueCode) {
-    let submitUrl = 'https://jira.youweagency.com/rest/tempo-timesheets/4/worklogs/';
+    let workLogFrame = document.querySelector("iframe[src^='/secure/GlobalWorklogDialog.jspa']");
+
+    let logAllButton = workLogFrame.contentWindow.document.getElementById('submitAll');
+
+    let jiraUrlPart = logAllButton.dataset.jiraUrlPart;
+
+    let submitUrl = 'https://jira.' + jiraUrlPart + '.com/rest/tempo-timesheets/4/worklogs/';
 
     let xhr = new XMLHttpRequest();
 
     let worker = document.head.querySelector('meta[name="ajs-tempo-user-key"]').content;
-
-    let workLogFrame = document.querySelector("iframe[src^='/secure/GlobalWorklogDialog.jspa']");
 
     let submitButton = workLogFrame.contentWindow.document.getElementById('submit' + issueCode);
 

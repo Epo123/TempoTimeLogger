@@ -8,6 +8,7 @@ let defaultWorkLogDescriptionValue = 'Working on ';
 let workLogOrderValue = 'startEndIssueCode';
 let timeSeparatorValue = 'colonTimeSeparator';
 let elementSeparatorValue = 'dashElementSeparator';
+let jiraUrlPart = 'youweagency';
 
 chrome.runtime.onInstalled.addListener(() => {
     chrome.storage.sync.set({ issueCodeOverrideValues });
@@ -15,4 +16,5 @@ chrome.runtime.onInstalled.addListener(() => {
     chrome.storage.sync.set({ workLogOrderValue });
     chrome.storage.sync.set({ timeSeparatorValue });
     chrome.storage.sync.set({ elementSeparatorValue });
+    chrome.storage.sync.set({ jiraUrlPart });
 });

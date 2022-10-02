@@ -10,14 +10,14 @@
   <h2>Spaces are not required, refresh to update example format after changing settings</h2>
 </div>
 <div>
-  <h2><label for="issueCodeOverrides"><p>Choose how to override certain issue codes by separating them by colon. Example INT-2:INTBBBBBZJ-2</p></label></h2>
+  <h2><label for="issueCodeOverrides">Choose how to override certain issue codes by separating them by colon. Example INT-2:INTBBBBBZJ-2</label></h2>
   <textarea id="issueCodeOverrides" rows="30" cols="100"></textarea>
 </div>
 <div>
   <button id="submitIssueCodeOverrides">Save issue code overrides</button>
 </div>
 <div>
-  <h2><label for="defaultWorkLogDescription"><p>Choose your default worklog description if you don't supply a message (appended by the issueCode)</p></label></h2>
+  <h2><label for="defaultWorkLogDescription">Choose your default worklog description if you don't supply a message (appended by the issueCode)</label></h2>
   <textarea id="defaultWorkLogDescription"></textarea>
 </div>
 <div>
@@ -64,6 +64,13 @@
 </div>
 <div>
   <button id="submitWorkLogOrder">Save preferred work log order</button>
+</div>
+<div>
+  <h2><label for="jiraUrlPart">Set Jira url part</label></h2>
+  <input type="text" id="jiraUrlPart" />
+</div>
+<div>
+  <button id="submitJiraUrlPart">Set Jira url part</button>
 </div>
 <script src="options.js"></script>
 </body>

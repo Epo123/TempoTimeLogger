@@ -13,7 +13,7 @@
   "options_page": "options.html",
   "content_scripts": [
     {
-      "matches": ["https://jira.youweagency.com/*"],
+      "matches": ["https://*/secure/Tempo.jspa"],
       "js": ["content-script.js"]
     }
   ]
