@@ -9,6 +9,7 @@ let workLogOrderValue = 'startEndIssueCode';
 let timeSeparatorValue = 'colonTimeSeparator';
 let elementSeparatorValue = 'dashElementSeparator';
 let jiraUrlPart = 'youweagency';
+let timeLogValue = 'Enter time log here';
 
 chrome.runtime.onInstalled.addListener(() => {
     chrome.storage.sync.set({ issueCodeOverrideValues });
@@ -17,4 +18,5 @@ chrome.runtime.onInstalled.addListener(() => {
     chrome.storage.sync.set({ timeSeparatorValue });
     chrome.storage.sync.set({ elementSeparatorValue });
     chrome.storage.sync.set({ jiraUrlPart });
+    chrome.storage.sync.set({ timeLogValue });
 });
