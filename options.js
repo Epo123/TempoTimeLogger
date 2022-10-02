@@ -24,8 +24,8 @@ submitDefaultWorkLogDescription.addEventListener('click', function() {
 
 submitIssueCodeOverrides.addEventListener('click', function() {
     if(syntaxCheckIssueCodeOverrides()) {
-        let issueCodeOverridesValues = issueCodeOverrides.value;
-        chrome.storage.sync.set({ issueCodeOverridesValues }, function() {
+        let issueCodeOverrideValues = issueCodeOverrides.value;
+        chrome.storage.sync.set({ issueCodeOverrideValues }, function() {
             alert('Overrides stored');
         });
     }
@@ -52,14 +52,14 @@ elementSeparatorSubmit.addEventListener('click', function() {
     let elementSeparatorValue = elementSeparator.value;
     chrome.storage.sync.set({ elementSeparatorValue }, function() {
         alert('Element Separator stored.');
-        chrome.storage.sync.get(['issueCodeOverridesValues', 'defaultWorkLogDescriptionValue', 'workLogOrderValue', 'timeSeparatorValue', 'elementSeparatorValue'], function(result) {
+        chrome.storage.sync.get(['issueCodeOverrideValues', 'defaultWorkLogDescriptionValue', 'workLogOrderValue', 'timeSeparatorValue', 'elementSeparatorValue'], function(result) {
             console.log(result);
         });
     });
 });
 
-chrome.storage.sync.get(['issueCodeOverridesValues', 'defaultWorkLogDescriptionValue', 'workLogOrderValue', 'timeSeparatorValue', 'elementSeparatorValue', 'jiraUrlPart'], function(result) {
-    issueCodeOverrides.innerHTML = result.issueCodeOverridesValues;
+chrome.storage.sync.get(['issueCodeOverrideValues', 'defaultWorkLogDescriptionValue', 'workLogOrderValue', 'timeSeparatorValue', 'elementSeparatorValue', 'jiraUrlPart'], function(result) {
+    issueCodeOverrides.innerHTML = result.issueCodeOverrideValues;
     defaultWorkLogDescription.innerHTML = result.defaultWorkLogDescriptionValue;
     jiraUrlPartInput.value = result.jiraUrlPart;
 
