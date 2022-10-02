@@ -78,7 +78,7 @@ function setupWorkLogHeaderBlock(groupedReport, issueCodes, workLogForm, jiraUrl
         }
     }
 
-    let headerBlockHtml = 'Total duration: ' + totalDuration + '<div class="sc-iwsKbI dVrytV"><button class="sc-iELTvK dSVjNn" height="default" type="button" id="submitAll"><span class="sc-cmTdod exoBPf"><span class="sc-jwKygS cWUQDR">Log all</span></span></button></div><div class="sc-gJWqzi IWPGt" type="default"></div><span style="position: relative; top: -10px;"><hr class="sc-laTMn dLgYsV"></span>';
+    let headerBlockHtml = 'Total duration: ' + totalDuration.toFixed(2) + '<div class="sc-iwsKbI dVrytV"><button class="sc-iELTvK dSVjNn" height="default" type="button" id="submitAll"><span class="sc-cmTdod exoBPf"><span class="sc-jwKygS cWUQDR">Log all</span></span></button></div><div class="sc-gJWqzi IWPGt" type="default"></div><span style="position: relative; top: -10px;"><hr class="sc-laTMn dLgYsV"></span>';
 
     workLogForm.querySelector('header').insertAdjacentHTML('afterend', headerBlockHtml);
 
@@ -261,7 +261,7 @@ function submitIssueTimeLog(issueCode) {
         worker: worker,
         comment: commentInput.value,
         started: selectedYear + '-' + selectedMonth + '-' + selectedDay,
-        timeSpentSeconds: issueCodeInput.dataset.durationSeconds,
+        timeSpentSeconds: parseFloat(issueCodeInput.dataset.durationSeconds),
         originTaskId: parseInt(issueId),
         remainingEstimate: 0,
         endDate: null,
@@ -308,7 +308,10 @@ function getDurationVariables(startTimeString, endTimeString) {
 
     let diffHours = Math.floor((diffMs % 86400000) / 3600000);
     let diffMinutes = Math.round(((diffMs % 86400000) % 3600000) / 60000);
-    let diffJiraMinutes = Math.round((diffMinutes / 60) * 100);
+    let diffJiraMinutes = ((diffMinutes / 60) * 100);
+    if(diffJiraMinutes < 10) {
+        diffJiraMinutes = '0' + diffJiraMinutes;
+    }
     let diffSeconds = Math.abs(diffMs / 1000);
     return {diffHours, diffMinutes, diffJiraMinutes, diffSeconds};
 }

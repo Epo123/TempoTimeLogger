@@ -5,16 +5,66 @@
     <title>Popup</title>
 </head>
 <body>
-<div>
-    <h2>
-        <label for="timeLog">
-            Open the Log time dialog (shortcut: 'w'), enter your time log in the area below and click 'Process'
-        </label>
-    </h2>
-    <textarea rows="30" cols="90" id="timeLog"></textarea>
-</div>
-<div>
-    <button id="process">Process - After logging time, please refresh to see results</button>
+<div class="tabs">
+    <div class="tab">
+        <input name="checkbox-tabs-group" type="radio" id="processorTab" class="checkboxtab" checked/>
+        <label for="processorTab">Processor</label>
+        <div class="content">
+            <div>
+                <h2>
+                    <label for="timeLog">
+                        Open the Log time dialog (shortcut: 'w'), enter your time log in the area below and click
+                        'Process'
+                    </label>
+                </h2>
+                <textarea rows="30" cols="90" id="timeLog"></textarea>
+            </div>
+            <div>
+                <button id="process">Process - After logging time, please refresh to see results</button>
+            </div>
+        </div>
+    </div>
+    <div class="tab">
+        <input name="checkbox-tabs-group" type="radio" id="generatorTab" class="checkboxtab"/>
+        <label for="generatorTab">Generator</label>
+        <div class="content">
+            <div>
+                <h2>
+                    <label for="issueList">
+                        Provide a list of issues to spread time over
+                    </label>
+                </h2>
+                <textarea rows="20" cols="50" id="issueList"></textarea>
+            </div>
+            <div>
+                <h2>
+                    <label for="durationInMinutes">
+                        Provide the total amount of time in minutes
+                    </label>
+                </h2>
+                <input type="text" id="durationInMinutes" />
+            </div>
+            <div>
+                <h2>
+                    <label for="workLogDescription">
+                        Provide the description
+                    </label>
+                </h2>
+                <input type="text" id="workLogDescription" />
+            </div>
+            <div>
+                <button type="button" id="generate">Generate</button>
+            </div>
+            <div>
+                <h2>
+                    <label for="generated">
+                        Generated work log will appear here:
+                    </label>
+                </h2>
+                <textarea rows="20" cols="90" id="generated" disabled></textarea>
+            </div>
+        </div>
+    </div>
 </div>
 <script src="popup.js"></script>
 </body>

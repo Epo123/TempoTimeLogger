@@ -10,6 +10,10 @@ let timeSeparatorValue = 'colonTimeSeparator';
 let elementSeparatorValue = 'dashElementSeparator';
 let jiraUrlPart = 'youweagency';
 let timeLogValue = 'Enter time log here';
+let issueListValue = 'ISSUE-123\n' +
+    'ISSUE-234';
+let durationInMinutesValue = 0;
+let workLogDescriptionValue = '';
 
 chrome.runtime.onInstalled.addListener(() => {
     chrome.storage.sync.set({ issueCodeOverrideValues });
@@ -19,4 +23,7 @@ chrome.runtime.onInstalled.addListener(() => {
     chrome.storage.sync.set({ elementSeparatorValue });
     chrome.storage.sync.set({ jiraUrlPart });
     chrome.storage.sync.set({ timeLogValue });
+    chrome.storage.sync.set({ issueListValue });
+    chrome.storage.sync.set({ durationInMinutesValue });
+    chrome.storage.sync.set({ workLogDescriptionValue });
 });

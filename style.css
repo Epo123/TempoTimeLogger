@@ -1,0 +1,9 @@
+input.checkboxtab:checked + label + div.content {
+    display: block;
+}
+input.checkboxtab + label + div.content {
+    display: none;
+}
+input.checkboxtab + label {
+    font-size: large;
+}
