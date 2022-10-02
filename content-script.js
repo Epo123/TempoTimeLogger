@@ -150,9 +150,19 @@ function searchIssueApi(issueCode) {
         if (this.status === 200) {
             let data = JSON.parse(this.responseText);
 
-            let issueId = data.issues[0].id;
-
             let workLogFrame = document.querySelector("iframe[src^='/secure/GlobalWorklogDialog.jspa']");
+
+            let issueId = 0;
+
+            if (typeof data.issues[0] !== 'undefined') {
+                 issueId = data.issues[0].id;
+            } else {
+                let submitButton = workLogFrame.contentWindow.document.getElementById('submit' + issueCode);
+
+                submitButton.innerHTML = '<span class="sc-cmTdod exoBPf"><span class="sc-jwKygS cWUQDR">Cannot find issue</span></span>';
+                submitButton.setAttribute('disabled', '');
+                return;
+            }
 
             let issueCodeInput = workLogFrame.contentWindow.document.getElementById('issueCode' + issueCode);
 
@@ -210,6 +220,10 @@ function submitIssueTimeLog(issueCode) {
     let commentInput = workLogFrame.contentWindow.document.getElementById('workLogDescription' + issueCode);
     let issueCodeInput = workLogFrame.contentWindow.document.getElementById('issueCode' + issueCode);
     let issueId = issueCodeInput.dataset.issueId;
+
+    if (issueId === 'undefined') {
+        return;
+    }
 
     let selectedDateInput = workLogFrame.contentWindow.document.getElementById('started');
     let selectedDate = new Date(selectedDateInput.value);

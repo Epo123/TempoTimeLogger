@@ -53,12 +53,29 @@ chrome.storage.sync.get(['issueCodeOverridesValues', 'defaultWorkLogDescriptionV
     issueCodeOverrides.innerHTML = result.issueCodeOverridesValues;
     defaultWorkLogDescription.innerHTML = result.defaultWorkLogDescriptionValue;
 
-    console.log('TEST');
-    console.log(result);
-
     document.getElementById(result.workLogOrderValue).checked = true;
     document.getElementById(result.timeSeparatorValue).checked = true;
     document.getElementById(result.elementSeparatorValue).checked = true;
+
+    let timeSeparator = ':';
+    let elementSeparator = '-';
+    if (result.timeSeparatorValue !== 'colonTimeSeparator') {
+        timeSeparator = '.';
+    }
+    if(result.elementSeparatorValue !== 'dashElementSeparator') {
+        elementSeparator = '/';
+    }
+
+    let exampleFormatTimes = '10' + timeSeparator + '00 ' + elementSeparator + ' 10' + timeSeparator + '30';
+    let exampleFormatText = '';
+    if (result.workLogOrderValue === 'startEndIssueCode') {
+        exampleFormatText = exampleFormatTimes + ' ' + elementSeparator + ' ISSUE-123 ' + elementSeparator + ' message';
+    } else {
+        exampleFormatText = 'ISSUE-123 ' + elementSeparator + ' ' + exampleFormatTimes + ' ' + elementSeparator + ' message';
+    }
+
+    let exampleFormatSpan = document.getElementById('exampleFormat');
+    exampleFormatSpan.innerText = exampleFormatText;
 });
 
 function syntaxCheckIssueCodeOverrides() {
