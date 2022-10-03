@@ -263,7 +263,6 @@ function submitIssueTimeLog(issueCode) {
         started: selectedYear + '-' + selectedMonth + '-' + selectedDay,
         timeSpentSeconds: parseFloat(issueCodeInput.dataset.durationSeconds),
         originTaskId: parseInt(issueId),
-        remainingEstimate: 0,
         endDate: null,
         includeNonWorkingDays: false
     }));
