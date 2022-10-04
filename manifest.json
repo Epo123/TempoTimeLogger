@@ -1,12 +1,12 @@
 {
   "name": "Tempo Time Logger",
   "description": "Browser extension to assist logging time in Tempo (Jira)",
-  "version": "1.3",
+  "version": "1.4",
   "manifest_version": 3,
   "background": {
     "service_worker": "background.js"
   },
-  "permissions": ["storage", "scripting"],
+  "permissions": ["storage"],
   "action": {
     "default_popup": "popup.html"
   },
